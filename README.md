@@ -74,7 +74,7 @@ Configure your preferences
 ### One-Line Install
 
 ```bash
-git clone https://github.com/strabo231/nautilus-backup-extension.git
+git clone https://github.com/strabo231/nautilus.git
 cd nautilus-backup-extension
 ./install.sh
 ```
