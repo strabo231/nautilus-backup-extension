@@ -197,12 +197,14 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         # Create file chooser dialog
         dialog = Gtk.FileChooserDialog(
             title="Backup As...",
+            parent=None,
             action=Gtk.FileChooserAction.SAVE,
             buttons=(
                 "_Cancel", Gtk.ResponseType.CANCEL,
                 "_Save", Gtk.ResponseType.OK
             )
         )
+        dialog.set_modal(True)
         
         # Set default name
         backup_name = self._generate_backup_name(source_path)
@@ -273,9 +275,11 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         """Show settings dialog"""
         dialog = Gtk.Dialog(
             title="Backup Settings",
-            flags=Gtk.DialogFlags.MODAL
+            parent=None,
+            flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT
         )
         dialog.set_default_size(400, 300)
+        dialog.set_position(Gtk.WindowPosition.CENTER)
         
         content = dialog.get_content_area()
         
@@ -359,13 +363,14 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         """Browse for backup folder"""
         dialog = Gtk.FileChooserDialog(
             title="Select Backup Folder",
+            parent=None,
             action=Gtk.FileChooserAction.SELECT_FOLDER,
             buttons=(
                 "_Cancel", Gtk.ResponseType.CANCEL,
                 "_Open", Gtk.ResponseType.OK
             )
         )
-        
+        dialog.set_modal(True)
         dialog.set_current_folder(str(self.backup_folder))
         
         response = dialog.run()
@@ -385,10 +390,13 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
     def _show_error_dialog(self, title, message):
         """Show error dialog"""
         dialog = Gtk.MessageDialog(
+            parent=None,
+            flags=Gtk.DialogFlags.MODAL,
             message_type=Gtk.MessageType.ERROR,
             buttons=Gtk.ButtonsType.OK,
             text=title
         )
+        dialog.set_position(Gtk.WindowPosition.CENTER)
         dialog.format_secondary_text(message)
         dialog.run()
         dialog.destroy()
