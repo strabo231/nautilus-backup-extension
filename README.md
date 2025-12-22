@@ -1,85 +1,159 @@
-[![Test Nautilus Backup Extension](https://github.com/strabo231/nautilus/actions/workflows/test.yml/badge.svg)](https://github.com/strabo231/nautilus/actions/workflows/test.yml)
+<div align="center">
 
-# Nautilus Backup Extension
+# 🔄 Nautilus Backup Extension
 
-**Easy right-click backups for Ubuntu/Linux!** 🚀
+### Easy Right-Click Backups for Ubuntu & Linux
 
-Never lose files again. Just right-click → Backup. No terminal needed!
+**Never lose files again. Just right-click → Backup. No terminal needed!**
 
-[![Test Nautilus Backup Extension](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml/badge.svg)](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Python](https://img.shields.io/badge/python-3.6+-green)
-![License](https://img.shields.io/badge/license-MIT-orange)
+[![Test Status](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml/badge.svg)](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/strabo231/nautilus-backup-extension/releases)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04%20|%2022.04%20|%2024.04-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
+[![GNOME](https://img.shields.io/badge/GNOME-Nautilus-4A86CF?logo=gnome&logoColor=white)](https://wiki.gnome.org/Apps/Files)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Sponsor](https://img.shields.io/github/sponsors/strabo231?label=Sponsor&logo=github&color=ff69b4)](https://github.com/sponsors/strabo231)
+
+![GitHub stars](https://img.shields.io/github/stars/strabo231/nautilus-backup-extension?style=social)
+![GitHub forks](https://img.shields.io/github/forks/strabo231/nautilus-backup-extension?style=social)
+
+[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Documentation](#-documentation) • [Contributing](#-contributing)
+
+---
+
+</div>
+
+## ✨ What's New in v1.0.1
+
+- 🎯 **Full Ubuntu 24.04 LTS support** - Works with latest Nautilus 46!
+- 🐛 **Critical bug fixes** - Config persistence and stability improvements
+- ⚡ **Better multi-file backups** - Enhanced handling for batch operations
+- 📚 **Updated documentation** - Comprehensive guides for all Ubuntu LTS versions
+
+---
 
 ## 🎯 The Problem
 
 On Linux, backing up files is unnecessarily complicated:
-- ❌ Need to open terminal
-- ❌ Remember `cp` command syntax
-- ❌ Type out full paths
-- ❌ Add timestamps manually
-- ❌ Create archives for folders
 
-## ✨ The Solution
+<table>
+<tr>
+<td>
 
-**Right-click → Backup. Done!**
+**❌ The Old Way**
+- Open terminal
+- Remember `cp` command syntax  
+- Type out full paths
+- Add timestamps manually
+- Create archives for folders
 
-This Nautilus extension adds beautiful backup options to your right-click menu. Simple as Windows/macOS, but better.
+</td>
+<td>
+
+**✅ The New Way**
+- Right-click file
+- Select "Backup"
+- Done! ✨
+
+</td>
+</tr>
+</table>
+
+---
 
 ## 🚀 Features
 
+<table>
+<tr>
+<td width="50%">
+
 ### ⚡ Quick Backup
 Creates timestamped backup in the same folder
-- `document.pdf` → `document_backup_2024-12-22_14-30-00.pdf`
-- Perfect for quick "save before editing"
-- One click, done!
+
+```
+document.pdf
+  ↓
+document_backup_2024-12-22_14-30-00.pdf
+```
+
+Perfect for quick "save before editing"
+
+</td>
+<td width="50%">
 
 ### 💾 Backup As...
 Choose custom name and location
+
 - Full file chooser dialog
 - Rename on backup
 - Save anywhere you want
 - Just like "Save As"
 
+</td>
+</tr>
+<tr>
+<td>
+
 ### 🗂️ Backup to ~/Backups
 Organized backup folder
+
 - All backups in one place
 - Easy to find later
-- Timestamped for organization
-- Automatic folder creation
+- Timestamped automatically
+- Opens from settings
+
+</td>
+<td>
 
 ### 📁 Folder Support
-Automatically creates `.tar.gz` archives
-- `project/` → `project_backup_2024-12-22_14-30-00.tar.gz`
-- Compressed to save space
-- Preserves all permissions
-- Easy to restore
+Automatic `.tar.gz` compression
 
-### 🔔 Desktop Notifications
-Visual feedback for every action
-- Success notifications
-- Error alerts
-- No guessing if it worked
+```
+project/
+  ↓
+project_backup_2024-12-22.tar.gz
+```
 
-### ⚙️ Settings Panel
-Configure your preferences
-- Change backup folder location
-- View backup features
-- Open backups folder
-- Version information
+Preserves all permissions & structure
+
+</td>
+</tr>
+</table>
+
+### More Features
+
+- 🔔 **Desktop Notifications** - Visual feedback for every action
+- ⚙️ **Settings Panel** - Configure backup folder and preferences
+- 🎨 **Native GNOME Integration** - Beautiful, consistent UI
+- 🚀 **Fast & Lightweight** - Instant backups, no performance impact
+- 🔒 **Safe & Reliable** - Preserves file permissions and metadata
+
+---
 
 ## 📦 Installation
 
-### One-Line Install
+### Quick Install (Recommended)
 
 ```bash
-git clone https://github.com/strabo231/nautilus.git
+# Clone the repository
+git clone https://github.com/strabo231/nautilus-backup-extension.git
 cd nautilus-backup-extension
+
+# Run installer (automatically detects your Nautilus version)
 ./install.sh
 ```
 
+**That's it!** The installer handles everything:
+- ✅ Detects Ubuntu 20.04, 22.04, or 24.04
+- ✅ Checks for Nautilus 3.x or 4.x
+- ✅ Installs dependencies if needed
+- ✅ Sets up the extension
+- ✅ Restarts Nautilus
+
 ### Manual Installation
+
+<details>
+<summary>Click to expand manual installation steps</summary>
 
 **1. Install Dependencies:**
 
@@ -109,174 +183,214 @@ nautilus -q
 nautilus &
 ```
 
-**Done!** Right-click any file to see the Backup menu.
+</details>
+
+### Verify Installation
+
+Right-click any file in Nautilus. You should see **🔄 Backup** in the menu!
+
+---
 
 ## 🎮 Usage
 
 ### Basic Usage
 
 1. **Right-click** any file or folder in Nautilus
-2. Look for **🔄 Backup** in the menu
+2. Look for **🔄 Backup** in the context menu
 3. Choose your option:
    - **⚡ Quick Backup** - Instant timestamped backup
    - **💾 Backup As...** - Choose name/location
    - **🗂️ Backup to ~/Backups** - Organized storage
 
-### Quick Backup Example
+### Real-World Examples
+
+<details>
+<summary><b>Before Editing Important Files</b></summary>
 
 ```
-Before:  /home/user/Documents/report.docx
+Scenario: About to edit a config file
 
-After:   /home/user/Documents/report.docx
-         /home/user/Documents/report_backup_2024-12-22_14-30-00.docx
+1. Right-click /etc/nginx/nginx.conf
+2. Backup → Quick Backup
+3. Edit safely! Original is backed up as:
+   nginx.conf.backup_2024-12-22_14-30-00
 ```
 
-### Backup As Example
+</details>
+
+<details>
+<summary><b>Creating Project Archives</b></summary>
 
 ```
-1. Right-click report.docx
+Scenario: Archiving a project folder
+
+1. Right-click ~/Projects/myapp/
 2. Backup → Backup As...
-3. Choose name: report_v2.docx
-4. Choose location: /home/user/Archive/
-5. Click Save
-
-Result: /home/user/Archive/report_v2.docx
+3. Choose: ~/Archive/myapp_v1.0.tar.gz
+4. Share or store the compressed archive
 ```
 
-### Folder Backup Example
+</details>
+
+<details>
+<summary><b>Regular Backup Routine</b></summary>
 
 ```
-Before:  /home/user/Projects/myapp/
+Scenario: Daily backup of important files
 
-After:   /home/user/Backups/myapp_backup_2024-12-22_14-30-00.tar.gz
-         (Contains entire folder structure)
+1. Select multiple files (Ctrl+Click)
+2. Right-click → Backup → Backup to ~/Backups
+3. All files backed up with timestamps
+4. Check ~/Backups anytime to find them
 ```
+
+</details>
+
+---
+
+## 💻 System Requirements
+
+<table>
+<tr>
+<td width="50%">
+
+### ✅ Supported Systems
+
+**Ubuntu LTS (Officially Tested):**
+- 🟢 **Ubuntu 24.04 LTS (Noble)** - Nautilus 46
+- 🟢 **Ubuntu 22.04 LTS (Jammy)** - Nautilus 42  
+- 🟢 **Ubuntu 20.04 LTS (Focal)** - Nautilus 3.36
+
+**Other Distros** (Should work):
+- Debian 11+
+- Fedora 35+
+- Pop!_OS 22.04+
+- Linux Mint 20+
+- Arch Linux (current)
+
+</td>
+<td width="50%">
+
+### 🔧 Requirements
+
+**Software:**
+- Python 3.8 or higher
+- Nautilus 3.x or 4.x
+- python3-nautilus package
+- GTK 3.24+ or GTK 4.x
+
+**Desktop:**
+- GNOME (with Nautilus/Files)
+- Any GNOME-based environment
+
+**Hardware:**
+- Minimal (runs on any system that runs Nautilus)
+
+</td>
+</tr>
+</table>
+
+---
 
 ## 📸 Screenshots
 
-### Right-Click Menu
+<details>
+<summary><b>Right-Click Menu</b></summary>
+
 ```
 ┌─────────────────────────┐
 │ Open                    │
 │ Open With...            │
-│ ──────────────          │
+│ ────────────────        │
 │ Cut                     │
 │ Copy                    │
 │ Paste                   │
-│ ──────────────          │
+│ ────────────────        │
 │ 🔄 Backup             ▶ │ ┌──────────────────────────────┐
-│ ──────────────          │ │ ⚡ Quick Backup (Same Folder) │
+│ ────────────────        │ │ ⚡ Quick Backup (Same Folder) │
 │ Properties              │ │ 💾 Backup As...               │
 └─────────────────────────┘ │ 🗂️ Backup to ~/Backups       │
-                             │ ─────────────────────────    │
+                             │ ──────────────────────────    │
                              │ ⚙️ Backup Settings            │
                              └──────────────────────────────┘
 ```
 
-### Backup As Dialog
+</details>
+
+<details>
+<summary><b>Backup As Dialog</b></summary>
+
 ```
-╔══════════════════════════════════════╗
-║           Backup As...               ║
-╠══════════════════════════════════════╣
-║                                      ║
-║  Save in: /home/user/Documents  [▼] ║
-║                                      ║
-║  Name: report_backup_2024-12-2...   ║
-║                                      ║
-║  ┌────────────────────────────────┐ ║
-║  │ document.pdf                   │ ║
-║  │ image.png                      │ ║
-║  │ report.docx                    │ ║
-║  └────────────────────────────────┘ ║
-║                                      ║
-║          [Cancel]  [Save]            ║
-╚══════════════════════════════════════╝
+╔═══════════════════════════════════╗
+║         Backup As...               ║
+╠═══════════════════════════════════╣
+║                                   ║
+║  Save in: /home/user/Documents  ▼ ║
+║                                   ║
+║  Name: report_backup_2024-12-...  ║
+║                                   ║
+║  ┌─────────────────────────────┐ ║
+║  │ document.pdf                │ ║
+║  │ image.png                   │ ║
+║  │ report.docx                 │ ║
+║  └─────────────────────────────┘ ║
+║                                   ║
+║          [Cancel]  [Save]         ║
+╚═══════════════════════════════════╝
 ```
 
-### Settings Panel
+</details>
+
+<details>
+<summary><b>Settings Panel</b></summary>
+
 ```
-╔════════════════════════════════════════╗
-║         Backup Settings                ║
-╠════════════════════════════════════════╣
-║                                        ║
-║  Backup Folder: /home/user/Backups [📁]║
-║                                        ║
-║  Features:                             ║
-║   ⚡ Quick Backup - Timestamped       ║
-║   💾 Backup As - Custom name          ║
-║   🗂️ Backup to ~/Backups             ║
-║   📁 Works with folders (.tar.gz)     ║
-║   🔔 Desktop notifications            ║
-║                                        ║
-║        [Open Backups Folder] [Close]   ║
-╚════════════════════════════════════════╝
+╔════════════════════════════════════╗
+║       Backup Settings              ║
+╠════════════════════════════════════╣
+║                                    ║
+║  Backup Folder:                    ║
+║  /home/user/Backups         [📁]   ║
+║                                    ║
+║  Features:                         ║
+║   ⚡ Quick Backup - Timestamped    ║
+║   💾 Backup As - Custom location   ║
+║   🗂️ Backup to ~/Backups           ║
+║   📁 Folder support (.tar.gz)      ║
+║   🔔 Desktop notifications         ║
+║                                    ║
+║   [Open Backups Folder]  [Close]   ║
+╚════════════════════════════════════╝
 ```
+
+</details>
+
+---
 
 ## 🎯 Use Cases
 
-### Before Editing
-```bash
-Right-click → Quick Backup
-# Edit with confidence, original is safe
-```
+| Scenario | Solution |
+|----------|----------|
+| 📝 **Before editing config files** | Quick Backup → Edit safely |
+| 💼 **Version control for documents** | Backup As → `document_v1.docx`, `document_v2.docx` |
+| 📦 **Project archiving** | Backup folder → Auto-compressed `.tar.gz` |
+| 🔄 **Regular backups** | Backup to ~/Backups → All in one place |
+| 🚀 **Before system updates** | Backup configs → Restore if needed |
+| 📤 **Sharing with USB/cloud** | Backup As to USB/Dropbox folder |
 
-### Weekly Backups
-```bash
-Right-click → Backup to ~/Backups
-# Organized collection of backups
-```
-
-### Version Control
-```bash
-Right-click → Backup As... → project_v1.0.tar.gz
-Right-click → Backup As... → project_v1.1.tar.gz
-Right-click → Backup As... → project_v2.0.tar.gz
-```
-
-### Sharing Backups
-```bash
-Right-click folder → Backup As... 
-# Save to USB/cloud folder
-# Already compressed and ready to share
-```
-
-### Before System Update
-```bash
-# Backup important configs
-Right-click ~/.bashrc → Backup to ~/Backups
-Right-click ~/.config/app/ → Backup to ~/Backups
-# Update system safely
-```
-
-## ⚙️ Configuration
-
-### Change Backup Folder
-
-1. Right-click any file → Backup → Backup Settings
-2. Click "Browse" next to Backup Folder
-3. Select new location
-4. Settings auto-save
-
-Or manually edit:
-```bash
-echo "/path/to/backup/folder" > ~/.config/nautilus-backup/config.txt
-```
-
-### Default Backup Location
-
-By default: `~/Backups`
-
-Change it anytime via Settings dialog.
+---
 
 ## 🔧 Troubleshooting
 
-### Menu Not Appearing?
+<details>
+<summary><b>Menu Not Appearing?</b></summary>
 
 **1. Check dependencies:**
 ```bash
 python3 -c "import gi; gi.require_version('Nautilus', '3.0')"
+# Or for Nautilus 4.x:
+python3 -c "import gi; gi.require_version('Nautilus', '4.0')"
 ```
-If error, install: `sudo apt install python3-nautilus`
 
 **2. Restart Nautilus:**
 ```bash
@@ -294,61 +408,66 @@ ls ~/.local/share/nautilus-python/extensions/nautilus-backup.py
 chmod +x ~/.local/share/nautilus-python/extensions/nautilus-backup.py
 ```
 
-### Nautilus Version Issues
+</details>
 
-This extension works with:
-- Nautilus 3.x (Ubuntu 18.04+)
-- Nautilus 4.x (Ubuntu 22.04+)
-- GNOME Files 40+
+<details>
+<summary><b>Extension Not Loading?</b></summary>
 
-For older versions, you may need `python-nautilus` instead of `python3-nautilus`.
-
-### Import Errors
-
-If you see import errors:
-```bash
-# Install GObject introspection
-sudo apt install python3-gi gir1.2-gtk-3.0
-
-# Reinstall nautilus-python
-sudo apt install --reinstall python3-nautilus
-```
-
-### Extension Not Loading
-
-Check Nautilus logs:
+**Check Nautilus logs:**
 ```bash
 nautilus -q
-nautilus 2>&1 | grep -i backup
+NAUTILUS_EXTENSION_DEBUG=1 nautilus 2>&1 | grep -i backup
 ```
 
-Verify Python path:
+**Verify Python path:**
 ```bash
 python3 -c "import sys; print('\n'.join(sys.path))"
 ```
 
-### Backup Fails
+</details>
 
-**Permission denied:**
-- Check destination folder permissions
-- Try backing up to ~/Backups instead
+<details>
+<summary><b>Backup Fails?</b></summary>
 
-**No space left:**
-- Check disk space: `df -h`
-- Clean up old backups
+**Common causes:**
+- ❌ Permission denied → Try backing up to ~/Backups
+- ❌ No space left → Check disk: `df -h`
+- ❌ Folder too large → May take time to compress
 
-**Folder too large:**
-- Compression may take time
-- Check system resources
-- Consider excluding large files
+**Check logs:**
+```bash
+journalctl -xe | grep -i backup
+```
+
+</details>
+
+### Still Having Issues?
+
+[Open an issue](https://github.com/strabo231/nautilus-backup-extension/issues) with:
+- Your Ubuntu version (`lsb_release -a`)
+- Nautilus version (`nautilus --version`)
+- Python version (`python3 --version`)
+- Error messages from logs
+
+---
+
+## 📚 Documentation
+
+- [📖 Quick Start Guide](QUICKSTART.md) - Get started in 2 minutes
+- [📘 User Guide](USER_GUIDE.md) - Comprehensive usage guide
+- [✨ Features](FEATURES.md) - Detailed feature documentation
+- [🤝 Contributing](CONTRIBUTING.md) - How to contribute
+- [📋 Changelog](CHANGELOG.md) - Version history
+
+---
 
 ## 🗑️ Uninstallation
-
-### Easy Uninstall
 
 ```bash
 ./uninstall.sh
 ```
+
+Your backup files in `~/Backups` are **NOT deleted** - only the extension is removed.
 
 ### Manual Uninstall
 
@@ -358,104 +477,128 @@ rm -rf ~/.config/nautilus-backup
 nautilus -q
 ```
 
-Your backup files in `~/Backups` are NOT deleted.
+---
 
 ## 🤝 Contributing
 
-Contributions welcome! Areas for improvement:
+Contributions are welcome! We'd love help with:
 
-- [ ] Restore from backup option
-- [ ] Compare file with backup
+- [ ] Restore from backup feature
+- [ ] Compare file with backup (diff view)
 - [ ] Auto-cleanup old backups (keep last N)
 - [ ] Backup scheduling
-- [ ] Exclude patterns for folders
-- [ ] Progress bar for large backups
-- [ ] Backup history view
-- [ ] Cloud storage integration
+- [ ] Progress bars for large operations
+- [ ] Cloud storage integration (Dropbox, Google Drive)
 
-## 📋 Requirements
-
-- **OS:** Ubuntu/Debian/Fedora/Arch Linux
-- **Desktop:** GNOME (with Nautilus)
-- **Python:** 3.6+
-- **Dependencies:** python3-nautilus
-
-## 🐛 Known Issues
-
-- Very large folders (>10GB) may take time to compress
-- No progress bar for long operations (yet)
-- Settings changes require Nautilus restart in some cases
-
-## 📝 License
-
-MIT License - See [LICENSE](LICENSE) file
-
-## 👤 Author
-
-Created with ❤️ for the Linux community
-
-## 🌟 Acknowledgments
-
-- Nautilus Python extension framework
-- GNOME community
-- All the frustrated users who just wanted to right-click → backup
-
-## 🔮 Future Plans
-
-### v1.1.0
-- Restore from backup
-- Compare files
-- Auto-cleanup options
-
-### v1.2.0
-- Multiple backup profiles
-- Exclude patterns
-- Progress dialogs
-
-### v1.3.0
-- Backup scheduling
-- Automatic backups
-- Version control integration
-
-## 💡 Tips & Tricks
-
-**Quick Alias:**
-```bash
-# Add to ~/.bashrc
-alias backup='nautilus $(pwd) &'
-# Opens current folder in Nautilus for easy backups
-```
-
-**Keyboard Shortcut:**
-1. Right-click file
-2. Press 'B' (highlights Backup)
-3. Press Enter
-4. Press 'Q' (Quick Backup)
-
-**Batch Backup:**
-- Select multiple files (Ctrl+Click)
-- Right-click → Quick Backup
-- All files backed up at once!
-
-**Backup Script Integration:**
-```bash
-#!/bin/bash
-# Auto-backup important files on login
-important_files=(
-    "$HOME/.bashrc"
-    "$HOME/.ssh/config"
-)
-
-for file in "${important_files[@]}"; do
-    # Uses the same timestamp format
-    cp "$file" "$file.backup.$(date +%Y-%m-%d_%H-%M-%S)"
-done
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Made backups effortless? ⭐ Star this repo!**
+## 🌟 Show Your Support
 
-**Questions or issues?** Open a GitHub issue!
+If this extension makes your life easier:
 
-**Enjoy hassle-free backups!** 🚀📦
+- ⭐ **Star this repo** - Helps others discover it!
+- 🐛 **Report bugs** - Help make it better
+- 💡 **Suggest features** - Tell us what you need
+- 📢 **Share it** - Tell your Linux friends
+- ☕ **[Sponsor](https://github.com/sponsors/strabo231)** - Support development
+
+---
+
+## 📊 Project Stats
+
+![GitHub repo size](https://img.shields.io/github/repo-size/strabo231/nautilus-backup-extension)
+![GitHub code size](https://img.shields.io/github/languages/code-size/strabo231/nautilus-backup-extension)
+![GitHub issues](https://img.shields.io/github/issues/strabo231/nautilus-backup-extension)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/strabo231/nautilus-backup-extension)
+![GitHub last commit](https://img.shields.io/github/last-commit/strabo231/nautilus-backup-extension)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/strabo231/nautilus-backup-extension)
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### What This Means
+
+✅ **You can:**
+- Use it commercially
+- Modify the code
+- Distribute it
+- Use it privately
+
+❌ **You must:**
+- Include the license
+- Include copyright notice
+
+❌ **No warranty** - Provided "as is"
+
+---
+
+## 💖 Acknowledgments
+
+- **Nautilus Python Extension Framework** - For making extensions possible
+- **GNOME Community** - For excellent documentation
+- **All Contributors** - Thank you for making this better!
+- **Linux Community** - For feedback and support
+
+Special thanks to everyone who:
+- Reported bugs
+- Suggested features  
+- Starred the repo
+- Shared with others
+
+---
+
+## 🔮 Roadmap
+
+### v1.1.0 (Planned)
+- ✨ Restore from backup
+- 📊 Backup history view
+- 🗑️ Auto-cleanup options
+
+### v1.2.0 (Future)
+- 📅 Scheduled backups
+- ☁️ Cloud storage integration
+- 🔄 Incremental backups
+
+### v2.0.0 (Ideas)
+- 🎨 Theme customization
+- 🌐 Multi-language support
+- 🔌 Plugin system
+
+---
+
+## 💬 Community
+
+- **Issues:** [GitHub Issues](https://github.com/strabo231/nautilus-backup-extension/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/strabo231/nautilus-backup-extension/discussions)
+- **Reddit:** [r/Ubuntu](https://reddit.com/r/Ubuntu)
+- **Discord:** *Coming soon*
+
+---
+
+## 📞 Contact
+
+- **GitHub:** [@strabo231](https://github.com/strabo231)
+- **Issues:** [Report a bug](https://github.com/strabo231/nautilus-backup-extension/issues/new)
+- **Email:** *Via GitHub profile*
+
+---
+
+<div align="center">
+
+### ⭐ Star Us on GitHub!
+
+If you find this extension useful, please consider giving it a star.  
+It helps others discover the project and motivates continued development!
+
+[![GitHub stars](https://img.shields.io/github/stars/strabo231/nautilus-backup-extension?style=social)](https://github.com/strabo231/nautilus-backup-extension)
+
+**Made with ❤️ for the Linux community**
+
+[🔝 Back to Top](#-nautilus-backup-extension)
+
+</div>

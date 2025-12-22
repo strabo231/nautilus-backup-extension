@@ -18,8 +18,26 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
     
     def __init__(self):
         super().__init__()
-        self.backup_folder = Path.home() / "Backups"
-        self.backup_folder.mkdir(exist_ok=True)
+        
+        # Load backup folder from config or use default
+        config_dir = Path.home() / ".config" / "nautilus-backup"
+        config_file = config_dir / "config.txt"
+        
+        if config_file.exists():
+            try:
+                saved_path = config_file.read_text().strip()
+                if saved_path:  # Check not empty
+                    self.backup_folder = Path(saved_path)
+                else:
+                    self.backup_folder = Path.home() / "Backups"
+            except Exception:
+                # If config is corrupted, use default
+                self.backup_folder = Path.home() / "Backups"
+        else:
+            self.backup_folder = Path.home() / "Backups"
+        
+        # Create backup folder if it doesn't exist
+        self.backup_folder.mkdir(parents=True, exist_ok=True)
     
     def get_file_items(self, files):
         """Add backup menu items to right-click context menu"""
@@ -137,6 +155,7 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         """Quick backup in same folder with timestamp"""
         success_count = 0
         error_count = 0
+        last_dest_path = None
         
         for file_info in files:
             source_path = self._get_file_path(file_info)
@@ -147,6 +166,7 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
             
             if success:
                 success_count += 1
+                last_dest_path = dest_path
             else:
                 error_count += 1
                 self._show_notification(
@@ -156,8 +176,8 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
                 )
         
         if success_count > 0:
-            if success_count == 1:
-                msg = f"Backed up to:\n{dest_path.parent}"
+            if success_count == 1 and last_dest_path:
+                msg = f"Backed up to:\n{last_dest_path.parent}"
             else:
                 msg = f"{success_count} file(s) backed up"
             
@@ -179,8 +199,8 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
             title="Backup As...",
             action=Gtk.FileChooserAction.SAVE,
             buttons=(
-                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_SAVE, Gtk.ResponseType.OK
+                "_Cancel", Gtk.ResponseType.CANCEL,
+                "_Save", Gtk.ResponseType.OK
             )
         )
         
@@ -218,6 +238,7 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         """Backup to ~/Backups folder"""
         success_count = 0
         error_count = 0
+        last_dest_path = None
         
         for file_info in files:
             source_path = self._get_file_path(file_info)
@@ -228,6 +249,7 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
             
             if success:
                 success_count += 1
+                last_dest_path = dest_path
             else:
                 error_count += 1
                 self._show_notification(
@@ -315,14 +337,14 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         
         # Version info
         version_label = Gtk.Label()
-        version_label.set_markup("<small>Nautilus Backup Extension v1.0.0</small>")
+        version_label.set_markup("<small>Nautilus Backup Extension v1.0.1</small>")
         version_label.set_margin_top(20)
         version_label.set_margin_bottom(10)
         content.pack_start(version_label, False, False, 0)
         
         # Buttons
         dialog.add_button("Open Backups Folder", 1)
-        dialog.add_button(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
+        dialog.add_button("_Close", Gtk.ResponseType.CLOSE)
         
         dialog.show_all()
         response = dialog.run()
@@ -339,8 +361,8 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
             title="Select Backup Folder",
             action=Gtk.FileChooserAction.SELECT_FOLDER,
             buttons=(
-                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_OPEN, Gtk.ResponseType.OK
+                "_Cancel", Gtk.ResponseType.CANCEL,
+                "_Open", Gtk.ResponseType.OK
             )
         )
         

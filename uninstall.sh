@@ -8,18 +8,18 @@ EXTENSION_NAME="nautilus-backup.py"
 INSTALL_DIR="$HOME/.local/share/nautilus-python/extensions"
 CONFIG_DIR="$HOME/.config/nautilus-backup"
 
-echo "╔════════════════════════════════════════════════════════╗"
-echo "║      Nautilus Backup Extension Uninstaller           ║"
-echo "╚════════════════════════════════════════════════════════╝"
+echo "============================================================"
+echo "      Nautilus Backup Extension Uninstaller               "
+echo "============================================================"
 echo ""
 
 if [ ! -f "$INSTALL_DIR/$EXTENSION_NAME" ]; then
-    echo "❌ Extension not found. Nothing to uninstall."
+    echo "[ERROR] Extension not found. Nothing to uninstall."
     exit 0
 fi
 
-echo "⚠️  This will remove the Nautilus Backup Extension"
-echo "   Your backup files will NOT be deleted"
+echo "[WARNING] This will remove the Nautilus Backup Extension"
+echo "          Your backup files will NOT be deleted"
 echo ""
 read -p "Continue with uninstallation? (y/N): " -n 1 -r
 echo ""
@@ -30,12 +30,12 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 echo ""
-echo "🗑️  Removing extension..."
+echo "[INFO] Removing extension..."
 
 # Remove extension file
 rm -f "$INSTALL_DIR/$EXTENSION_NAME"
 
-echo "✓ Extension removed"
+echo "[OK] Extension removed"
 
 # Ask about config
 echo ""
@@ -44,25 +44,25 @@ echo ""
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     rm -rf "$CONFIG_DIR"
-    echo "✓ Configuration removed"
+    echo "[OK] Configuration removed"
 else
-    echo "ℹ️  Configuration preserved at: $CONFIG_DIR"
+    echo "[INFO] Configuration preserved at: $CONFIG_DIR"
 fi
 
 # Restart Nautilus
 echo ""
-echo "🔄 Restarting Nautilus..."
+echo "[INFO] Restarting Nautilus..."
 
 nautilus -q 2>/dev/null || true
 sleep 1
 nohup nautilus > /dev/null 2>&1 &
 
-echo "✓ Nautilus restarted"
+echo "[OK] Nautilus restarted"
 
 echo ""
-echo "╔════════════════════════════════════════════════════════╗"
-echo "║          ✅ Uninstallation Complete!                  ║"
-echo "╚════════════════════════════════════════════════════════╝"
+echo "============================================================"
+echo "          Uninstallation Complete!                         "
+echo "============================================================"
 echo ""
 echo "The Nautilus Backup Extension has been removed."
 echo "Your backup files remain untouched in ~/Backups"
