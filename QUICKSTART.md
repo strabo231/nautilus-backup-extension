@@ -6,7 +6,7 @@ Get up and running in 2 minutes! ⚡
 
 ```bash
 # 1. Clone
-git clone https://github.com/yourusername/nautilus-backup-extension.git
+git clone https://github.com/strabo231/nautilus-backup-extension.git
 cd nautilus-backup-extension
 
 # 2. Install
