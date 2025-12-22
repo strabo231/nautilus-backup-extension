@@ -6,7 +6,7 @@
 
 Never lose files again. Just right-click → Backup. No terminal needed!
 
-[![Test Nautilus Backup Extension](https://github.com/yourusername/nautilus-backup-extension/actions/workflows/test.yml/badge.svg)](https://github.com/yourusername/nautilus-backup-extension/actions/workflows/test.yml)
+[![Test Nautilus Backup Extension](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml/badge.svg)](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Python](https://img.shields.io/badge/python-3.6+-green)
 ![License](https://img.shields.io/badge/license-MIT-orange)
@@ -74,7 +74,7 @@ Configure your preferences
 ### One-Line Install
 
 ```bash
-git clone https://github.com/yourusername/nautilus-backup-extension.git
+git clone https://github.com/strabo231/nautilus-backup-extension.git
 cd nautilus-backup-extension
 ./install.sh
 ```
