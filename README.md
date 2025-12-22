@@ -1,3 +1,5 @@
+[![Test Nautilus Backup Extension](https://github.com/strabo231/nautilus/actions/workflows/test.yml/badge.svg)](https://github.com/strabo231/nautilus/actions/workflows/test.yml)
+
 # Nautilus Backup Extension
 
 **Easy right-click backups for Ubuntu/Linux!** 🚀
