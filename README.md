@@ -7,7 +7,7 @@
 **Never lose files again. Just right-click → Backup. No terminal needed!**
 
 [![Test Status](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml/badge.svg)](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml)
-[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/strabo231/nautilus-backup-extension/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue)](https://github.com/strabo231/nautilus-backup-extension/releases)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04%20|%2022.04%20|%2024.04-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
 [![GNOME](https://img.shields.io/badge/GNOME-Nautilus-4A86CF?logo=gnome&logoColor=white)](https://wiki.gnome.org/Apps/Files)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)](https://python.org)
@@ -23,12 +23,16 @@
 
 </div>
 
-## ✨ What's New in v1.0.1
+## ✨ What's New in v1.2.0
 
-- 🎯 **Full Ubuntu 24.04 LTS support** - Works with latest Nautilus 46!
-- 🐛 **Critical bug fixes** - Config persistence and stability improvements
-- ⚡ **Better multi-file backups** - Enhanced handling for batch operations
-- 📚 **Updated documentation** - Comprehensive guides for all Ubuntu LTS versions
+- 🎯 **"Backup As..." Fixed!** - File chooser dialog now works reliably on all systems
+- ♻️ **Restore from Backup** - Right-click backup files to restore originals
+- 🔍 **Compare with Original** - View differences between backup and current file
+- 📜 **View Backup History** - Browse all backups of a file
+- 🗑️ **Auto-Cleanup Old Backups** - Keep only last N backups per file (configurable)
+- ⏳ **Progress Notifications** - Visual feedback for large file operations
+- 📊 **Backup Statistics** - Track total backups created and space used
+- 🐛 **Critical Bug Fixes** - GTK 4 dialog handling and stability improvements
 
 ---
 
@@ -82,12 +86,13 @@ Perfect for quick "save before editing"
 <td width="50%">
 
 ### 💾 Backup As...
-Choose custom name and location
+Choose custom name and location *(Now Fixed!)*
 
 - Full file chooser dialog
 - Rename on backup
 - Save anywhere you want
 - Just like "Save As"
+- **Works reliably on all systems!**
 
 </td>
 </tr>
@@ -118,11 +123,61 @@ Preserves all permissions & structure
 
 </td>
 </tr>
+<tr>
+<td>
+
+### ♻️ Restore from Backup
+Right-click any backup file
+
+- Automatically detects backup files
+- Restores to original location
+- Confirmation dialog
+- Safe overwrite protection
+
+</td>
+<td>
+
+### 🔍 Compare with Original
+See what changed
+
+- Uses meld or diff
+- Visual side-by-side comparison
+- Perfect before restoring
+- Automatic fallback to text diff
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 📜 View Backup History
+Browse all backups of a file
+
+- See all versions
+- Sorted by date
+- Open backup location
+- Restore any version
+
+</td>
+<td>
+
+### 🗑️ Auto-Cleanup
+Keep only recent backups
+
+- Configurable limit (keep last N)
+- Per-file cleanup
+- Automatic old backup removal
+- Saves disk space
+
+</td>
+</tr>
 </table>
 
 ### More Features
 
 - 🔔 **Desktop Notifications** - Visual feedback for every action
+- ⏳ **Progress Indicators** - For large file/folder operations
+- 📊 **Statistics Tracking** - Monitor total backups and space used
 - ⚙️ **Settings Panel** - Configure backup folder and preferences
 - 🎨 **Native GNOME Integration** - Beautiful, consistent UI
 - 🚀 **Fast & Lightweight** - Instant backups, no performance impact
@@ -198,9 +253,13 @@ Right-click any file in Nautilus. You should see **🔄 Backup** in the menu!
 1. **Right-click** any file or folder in Nautilus
 2. Look for **🔄 Backup** in the context menu
 3. Choose your option:
-   - **⚡ Quick Backup** - Instant timestamped backup
-   - **💾 Backup As...** - Choose name/location
-   - **🗂️ Backup to ~/Backups** - Organized storage
+   - **⚡ Quick Backup** - Instant timestamped backup in same folder
+   - **💾 Backup As...** - Choose custom name and location
+   - **🗂️ Backup to ~/Backups** - Organized central storage
+   - **♻️ Restore from Backup** - (On backup files) Restore original
+   - **🔍 Compare with Original** - (On backup files) View differences
+   - **📜 View All Backups** - See all backups of this file
+   - **⚙️ Backup Settings** - Configure preferences
 
 ### Real-World Examples
 
@@ -213,7 +272,10 @@ Scenario: About to edit a config file
 1. Right-click /etc/nginx/nginx.conf
 2. Backup → Quick Backup
 3. Edit safely! Original is backed up as:
-   nginx.conf.backup_2024-12-22_14-30-00
+   nginx.conf_backup_2024-12-22_14-30-00
+4. If something breaks:
+   - Right-click the backup
+   - Restore from Backup
 ```
 
 </details>
@@ -242,6 +304,21 @@ Scenario: Daily backup of important files
 2. Right-click → Backup → Backup to ~/Backups
 3. All files backed up with timestamps
 4. Check ~/Backups anytime to find them
+5. Old backups auto-deleted if limit set
+```
+
+</details>
+
+<details>
+<summary><b>Comparing File Versions</b></summary>
+
+```
+Scenario: Check what changed since backup
+
+1. Right-click report_backup_2024-12-20.docx
+2. Compare with Original
+3. See differences side-by-side in meld
+4. Decide if you want to restore
 ```
 
 </details>
@@ -286,6 +363,9 @@ Scenario: Daily backup of important files
 **Hardware:**
 - Minimal (runs on any system that runs Nautilus)
 
+**Optional:**
+- `meld` - For visual file comparison
+
 </td>
 </tr>
 </table>
@@ -307,10 +387,12 @@ Scenario: Daily backup of important files
 │ Paste                   │
 │ ────────────────        │
 │ 🔄 Backup             ▶ │ ┌──────────────────────────────┐
-│ ────────────────        │ │ ⚡ Quick Backup (Same Folder) │
-│ Properties              │ │ 💾 Backup As...               │
-└─────────────────────────┘ │ 🗂️ Backup to ~/Backups       │
-                             │ ──────────────────────────    │
+│ ────────────────        │ │ 📜 View All Backups           │
+│ Properties              │ │ ─────────────────────────     │
+└─────────────────────────┘ │ ⚡ Quick Backup (Same Folder) │
+                             │ 💾 Backup As...               │
+                             │ 🗂️ Backup to ~/Backups       │
+                             │ ─────────────────────────     │
                              │ ⚙️ Backup Settings            │
                              └──────────────────────────────┘
 ```
@@ -318,7 +400,28 @@ Scenario: Daily backup of important files
 </details>
 
 <details>
-<summary><b>Backup As Dialog</b></summary>
+<summary><b>Backup File Context Menu</b></summary>
+
+```
+Right-click on any file with "_backup_" in the name:
+
+┌─────────────────────────┐
+│ 🔄 Backup             ▶ │ ┌──────────────────────────────┐
+└─────────────────────────┘ │ ♻️ Restore from Backup        │
+                             │ 🔍 Compare with Original      │
+                             │ ─────────────────────────     │
+                             │ ⚡ Quick Backup (Same Folder) │
+                             │ 💾 Backup As...               │
+                             │ 🗂️ Backup to ~/Backups       │
+                             │ ─────────────────────────     │
+                             │ ⚙️ Backup Settings            │
+                             └──────────────────────────────┘
+```
+
+</details>
+
+<details>
+<summary><b>Backup As Dialog (Fixed!)</b></summary>
 
 ```
 ╔═══════════════════════════════════╗
@@ -352,11 +455,25 @@ Scenario: Daily backup of important files
 ║  Backup Folder:                    ║
 ║  /home/user/Backups         [📁]   ║
 ║                                    ║
+║  Auto-Cleanup Old Backups:         ║
+║  ☑ Keep only last [10▼] backups   ║
+║     per file                       ║
+║                                    ║
+║  Statistics:                       ║
+║  Total backups created: 127        ║
+║  Total space used: 2.4 GB          ║
+║                                    ║
 ║  Features:                         ║
 ║   ⚡ Quick Backup - Timestamped    ║
 ║   💾 Backup As - Custom location   ║
 ║   🗂️ Backup to ~/Backups           ║
+║   ♻️ Restore - From backup files   ║
+║   🔍 Compare - View differences    ║
+║   📜 History - View all backups    ║
 ║   📁 Folder support (.tar.gz)      ║
+║   ⏳ Progress - For large ops      ║
+║   🗑️ Auto-cleanup - Save space     ║
+║   📊 Statistics - Track usage      ║
 ║   🔔 Desktop notifications         ║
 ║                                    ║
 ║   [Open Backups Folder]  [Close]   ║
@@ -371,12 +488,14 @@ Scenario: Daily backup of important files
 
 | Scenario | Solution |
 |----------|----------|
-| 📝 **Before editing config files** | Quick Backup → Edit safely |
+| 📝 **Before editing config files** | Quick Backup → Edit safely → Restore if needed |
 | 💼 **Version control for documents** | Backup As → `document_v1.docx`, `document_v2.docx` |
 | 📦 **Project archiving** | Backup folder → Auto-compressed `.tar.gz` |
-| 🔄 **Regular backups** | Backup to ~/Backups → All in one place |
-| 🚀 **Before system updates** | Backup configs → Restore if needed |
+| 🔄 **Regular backups** | Backup to ~/Backups → Auto-cleanup old versions |
+| 🚀 **Before system updates** | Backup configs → Compare/Restore if issues |
 | 📤 **Sharing with USB/cloud** | Backup As to USB/Dropbox folder |
+| 🔍 **Check file changes** | Compare with Original → See what changed |
+| ♻️ **Undo unwanted changes** | Restore from Backup → Get original back |
 
 ---
 
@@ -427,17 +546,48 @@ python3 -c "import sys; print('\n'.join(sys.path))"
 </details>
 
 <details>
+<summary><b>"Backup As..." Dialog Not Showing?</b></summary>
+
+**This was fixed in v1.2.0!** Make sure you have the latest version:
+
+```bash
+cd nautilus-backup-extension
+git pull
+./install.sh
+```
+
+If still having issues:
+```bash
+nautilus -q
+NAUTILUS_EXTENSION_DEBUG=1 nautilus 2>&1 | grep "backup_as"
+```
+
+</details>
+
+<details>
 <summary><b>Backup Fails?</b></summary>
 
 **Common causes:**
 - ❌ Permission denied → Try backing up to ~/Backups
 - ❌ No space left → Check disk: `df -h`
-- ❌ Folder too large → May take time to compress
+- ❌ Folder too large → May take time to compress (watch for progress notification)
 
 **Check logs:**
 ```bash
 journalctl -xe | grep -i backup
 ```
+
+</details>
+
+<details>
+<summary><b>Compare Feature Not Working?</b></summary>
+
+**Install meld for visual comparison:**
+```bash
+sudo apt install meld
+```
+
+Without meld, the extension falls back to text diff.
 
 </details>
 
@@ -458,6 +608,7 @@ journalctl -xe | grep -i backup
 - [✨ Features](FEATURES.md) - Detailed feature documentation
 - [🤝 Contributing](CONTRIBUTING.md) - How to contribute
 - [📋 Changelog](CHANGELOG.md) - Version history
+- [🔧 Technical Details](BACKUP_AS_FIX.md) - Dialog fix implementation
 
 ---
 
@@ -481,14 +632,22 @@ nautilus -q
 
 ## 🤝 Contributing
 
-Contributions are welcome! We'd love help with:
+Contributions are welcome! Current roadmap:
 
-- [ ] Restore from backup feature
-- [ ] Compare file with backup (diff view)
-- [ ] Auto-cleanup old backups (keep last N)
+**Completed in v1.2.0:**
+- [x] Restore from backup feature
+- [x] Compare file with backup (diff view)
+- [x] Auto-cleanup old backups (keep last N)
+- [x] Progress bars for large operations
+- [x] Backup history view
+- [x] Statistics tracking
+- [x] Fix "Backup As..." dialog
+
+**Still wanted:**
 - [ ] Backup scheduling
-- [ ] Progress bars for large operations
+- [ ] Incremental backups
 - [ ] Cloud storage integration (Dropbox, Google Drive)
+- [ ] Port to other file managers (Nemo, Caja)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -554,20 +713,16 @@ Special thanks to everyone who:
 
 ## 🔮 Roadmap
 
-### v1.1.0 (Planned)
-- ✨ Restore from backup
-- 📊 Backup history view
-- 🗑️ Auto-cleanup options
-
-### v1.2.0 (Future)
-- 📅 Scheduled backups
-- ☁️ Cloud storage integration
-- 🔄 Incremental backups
-
-### v2.0.0 (Ideas)
-- 🎨 Theme customization
+### v1.3.0 (Planned)
+- 📅 Scheduled backups (cron integration)
+- 🔄 Incremental backup support
 - 🌐 Multi-language support
+
+### v2.0.0 (Future)
+- ☁️ Cloud storage integration
+- 🎨 Theme customization
 - 🔌 Plugin system
+- 🗂️ Support for other file managers (Nemo, Caja)
 
 ---
 
