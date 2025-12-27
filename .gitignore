@@ -70,3 +70,5 @@ debian/nautilus-backup-extension/
 venv/
 env/
 .venv/
+*_backup_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*
+nautilus-backup_backup_*.py
