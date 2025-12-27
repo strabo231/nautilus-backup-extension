@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Nautilus Backup Extension v1.2.1
+Nautilus Backup Extension v1.2.0
 Features: Restore, Progress, Auto-cleanup, Compare, History, Stats
-COMPATIBILITY: Ubuntu 20.04, 22.04, 24.04 (Nautilus 3.x and 4.x)
 """
 
 import os
@@ -23,31 +22,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# CRITICAL: Detect Nautilus/GTK version with fallback
+# CRITICAL: Specify versions BEFORE importing
 import gi
-
-# Try Nautilus 4.0 first (Ubuntu 22.04+, 24.04)
-NAUTILUS_VERSION = None
-GTK_VERSION = None
-
-try:
-    gi.require_version('Nautilus', '4.0')
-    gi.require_version('Gtk', '4.0')
-    NAUTILUS_VERSION = 4
-    GTK_VERSION = 4
-    logger.info("✓ Using Nautilus 4.0 API with GTK 4 (Ubuntu 22.04+)")
-except ValueError:
-    # Fallback to Nautilus 3.0 (Ubuntu 20.04)
-    try:
-        gi.require_version('Nautilus', '3.0')
-        gi.require_version('Gtk', '3.0')
-        NAUTILUS_VERSION = 3
-        GTK_VERSION = 3
-        logger.info("✓ Using Nautilus 3.0 API with GTK 3 (Ubuntu 20.04 compatibility mode)")
-    except ValueError:
-        logger.error("✗ No compatible Nautilus version found!")
-        logger.error("Please install python3-nautilus: sudo apt install python3-nautilus")
-        raise ImportError("Nautilus Python bindings not found")
+gi.require_version('Nautilus', '4.0')
+gi.require_version('Gtk', '4.0')
 
 from gi.repository import Nautilus, GObject, Gtk, Gio, GLib
 
@@ -56,8 +34,6 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
     
     def __init__(self):
         super().__init__()
-        
-        logger.info(f"Initializing Nautilus Backup Extension (GTK {GTK_VERSION})")
         
         # Load config
         self.config_dir = Path.home() / ".config" / "nautilus-backup"
@@ -94,24 +70,8 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         self.stats_file = self.config_dir / "stats.txt"
         self.stats = self._load_stats()
     
-    def get_file_items(self, *args):
-        """Add backup menu items to right-click context menu
-        
-        Note: Method signature changed between Nautilus 3 and 4
-        - Nautilus 3: get_file_items(window, files)
-        - Nautilus 4: get_file_items(files)
-        """
-        # Handle both Nautilus 3 and 4 signatures
-        if NAUTILUS_VERSION == 3:
-            # Nautilus 3: (window, files)
-            if len(args) == 2:
-                files = args[1]
-            else:
-                files = args[0] if args else []
-        else:
-            # Nautilus 4: (files,)
-            files = args[0] if args else []
-        
+    def get_file_items(self, files):
+        """Add backup menu items to right-click context menu"""
         if len(files) == 0:
             return []
         
@@ -210,8 +170,7 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         
         return [backup_item]
     
-    def get_background_items(self, *args):
-        """Background items (not used, but required by interface)"""
+    def get_background_items(self, current_folder):
         return []
     
     def _load_stats(self):
@@ -249,108 +208,117 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         """Check if filename matches backup pattern"""
         return '_backup_' in path.name and re.search(r'_backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}', path.name)
     
-    def _generate_backup_name(self, source_path):
-        """Generate timestamped backup filename"""
+    def _get_original_name(self, backup_path):
+        """Extract original filename from backup"""
+        # Remove _backup_YYYY-MM-DD_HH-MM-SS part
+        match = re.search(r'(.+)_backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.tar\.gz|.*?)$', backup_path.name)
+        if match:
+            return match.group(1) + match.group(2)
+        return backup_path.name
+    
+    def _generate_backup_name(self, original_path):
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         
-        if source_path.is_dir():
-            return f"{source_path.name}_backup_{timestamp}.tar.gz"
+        if original_path.is_file():
+            stem = original_path.stem
+            suffix = original_path.suffix
+            backup_name = f"{stem}_backup_{timestamp}{suffix}"
         else:
-            stem = source_path.stem
-            suffix = source_path.suffix
-            return f"{stem}_backup_{timestamp}{suffix}"
+            backup_name = f"{original_path.name}_backup_{timestamp}.tar.gz"
+        
+        return backup_name
     
-    def _get_original_filename(self, backup_path):
-        """Extract original filename from backup filename"""
-        pattern = r'^(.+)_backup_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(.*)$'
-        match = re.match(pattern, backup_path.name)
-        if match:
-            if backup_path.suffix == '.gz' and backup_path.stem.endswith('.tar'):
-                # It's a folder backup
-                return match.group(1)
-            else:
-                # It's a file backup
-                return match.group(1) + match.group(2)
-        return None
-    
-    def _create_backup(self, source, destination):
-        """Create backup of file or folder"""
+    def _create_backup(self, source_path, dest_path, progress_callback=None):
         try:
-            if source.is_dir():
-                # Create compressed archive for folders
-                with tarfile.open(destination, "w:gz") as tar:
-                    tar.add(source, arcname=source.name)
-                file_size = destination.stat().st_size
+            if source_path.is_file():
+                # Simple file copy
+                if progress_callback:
+                    progress_callback(f"Copying {source_path.name}...")
+                shutil.copy2(source_path, dest_path)
+                file_size = source_path.stat().st_size
             else:
-                # Copy file with metadata
-                shutil.copy2(source, destination)
-                file_size = destination.stat().st_size
+                # Folder compression with progress
+                if progress_callback:
+                    progress_callback(f"Compressing {source_path.name}...")
+                with tarfile.open(dest_path, "w:gz") as tar:
+                    tar.add(source_path, arcname=source_path.name)
+                file_size = dest_path.stat().st_size
             
-            # Update statistics
+            # Update stats
             self._update_stats(file_size)
             
             return True, None
+        except PermissionError as e:
+            logger.error(f"Permission denied: {e}")
+            return False, "Permission denied"
+        except OSError as e:
+            logger.error(f"OS error during backup: {e}")
+            return False, str(e)
         except Exception as e:
+            logger.error(f"Unexpected error during backup: {e}")
             return False, str(e)
     
-    def _show_notification(self, title, message, success=True):
-        """Show desktop notification"""
+    def _cleanup_old_backups(self, dest_path):
+        """Remove old backups if max_backups is set"""
+        if self.max_backups is None:
+            return
+        
         try:
-            icon = "dialog-information" if success else "dialog-error"
+            # Get base name pattern for this file
+            if dest_path.suffix == '.gz' and dest_path.stem.endswith('.tar'):
+                # Folder backup: project_backup_*.tar.gz
+                base = dest_path.name.replace('_backup_' + dest_path.name.split('_backup_')[1], '')
+                pattern = f"{base}_backup_*.tar.gz"
+            else:
+                # File backup: file_backup_*.ext
+                stem = dest_path.stem.rsplit('_backup_', 1)[0]
+                pattern = f"{stem}_backup_*{dest_path.suffix}"
+            
+            # Find all matching backups
+            backup_dir = dest_path.parent
+            import glob
+            matching_backups = sorted(
+                glob.glob(str(backup_dir / pattern)),
+                key=os.path.getmtime,
+                reverse=True
+            )
+            
+            # Remove old ones (keep max_backups)
+            if len(matching_backups) > self.max_backups:
+                for old_backup in matching_backups[self.max_backups:]:
+                    try:
+                        os.remove(old_backup)
+                        logger.info(f"Cleaned up old backup: {old_backup}")
+                    except Exception as e:
+                        logger.error(f"Failed to remove old backup {old_backup}: {e}")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+    
+    def _show_notification(self, title, message, success=True):
+        try:
+            icon = "emblem-default" if success else "dialog-error"
             subprocess.run([
                 'notify-send',
                 '-i', icon,
-                '-u', 'normal',
+                '-t', '3000',
                 title,
                 message
             ], check=False)
         except Exception as e:
             logger.error(f"Failed to show notification: {e}")
     
-    def _cleanup_old_backups(self, new_backup_path):
-        """Clean up old backups if max limit is set"""
-        if self.max_backups is None:
-            return
-        
-        try:
-            # Extract base filename from backup
-            original_name = self._get_original_filename(new_backup_path)
-            if not original_name:
-                return
-            
-            # Find all backups of this file in the same directory
-            parent_dir = new_backup_path.parent
-            pattern = f"{Path(original_name).stem}_backup_*{Path(original_name).suffix}"
-            
-            all_backups = sorted(
-                parent_dir.glob(pattern),
-                key=lambda p: p.stat().st_mtime,
-                reverse=True
-            )
-            
-            # Remove oldest backups if over limit
-            if len(all_backups) > self.max_backups:
-                for old_backup in all_backups[self.max_backups:]:
-                    try:
-                        old_backup.unlink()
-                        logger.info(f"Cleaned up old backup: {old_backup.name}")
-                    except Exception as e:
-                        logger.error(f"Failed to delete {old_backup}: {e}")
-        except Exception as e:
-            logger.error(f"Cleanup failed: {e}")
-    
     def _backup_with_progress(self, source_path, dest_path, notification_title):
-        """Backup with progress notification (for large files/folders)"""
+        """Backup in background thread with progress notification"""
         
         def do_backup():
-            # Show initial notification
-            GLib.idle_add(
-                self._show_notification,
+            # Show progress notification
+            self._show_notification(
                 "Backup In Progress...",
-                f"Backing up: {source_path.name}",
-                True
+                f"Backing up {source_path.name}",
+                success=True
             )
             
+            # Perform backup
             success, error = self._create_backup(source_path, dest_path)
             
             if success:
@@ -421,7 +389,7 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
             self._show_notification("Backup Complete ✓", msg)
     
     def backup_as(self, menu, files):
-        """Backup with file chooser - Compatible with GTK 3 and 4"""
+        """Backup with file chooser - GTK 4 version"""
         if len(files) != 1:
             self._show_notification(
                 "Multiple Selection",
@@ -434,16 +402,6 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         backup_name = self._generate_backup_name(source_path)
         
         logger.info(f"backup_as: Starting for {source_path.name}")
-        
-        if GTK_VERSION == 4:
-            # GTK 4 version (Ubuntu 22.04+)
-            self._backup_as_gtk4(source_path, backup_name)
-        else:
-            # GTK 3 version (Ubuntu 20.04)
-            self._backup_as_gtk3(source_path, backup_name)
-    
-    def _backup_as_gtk4(self, source_path, backup_name):
-        """GTK 4 file dialog implementation"""
         
         def on_dialog_response(dialog, task):
             try:
@@ -489,11 +447,11 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
                     success=False
                 )
         
-        # Create and configure the file dialog (GTK 4)
+        # Create and configure the file dialog
         dialog = Gtk.FileDialog()
         dialog.set_title("Backup As...")
         dialog.set_initial_name(backup_name)
-        logger.debug(f"backup_as: Created GTK4 dialog with initial name: {backup_name}")
+        logger.debug(f"backup_as: Created dialog with initial name: {backup_name}")
         
         # Set initial folder to source location
         try:
@@ -503,9 +461,9 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         except Exception as e:
             logger.warning(f"backup_as: Could not set initial folder: {e}")
         
-        # Show the dialog
+        # Show the dialog directly (no idle_add needed - test version proves this works)
         try:
-            logger.info("backup_as: Calling dialog.save() [GTK 4]")
+            logger.info("backup_as: Calling dialog.save()")
             dialog.save(None, None, on_dialog_response)
             logger.info("backup_as: dialog.save() called successfully")
         except Exception as e:
@@ -518,60 +476,178 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
                 success=False
             )
     
-    def _backup_as_gtk3(self, source_path, backup_name):
-        """GTK 3 file dialog implementation"""
+    def compare_backup(self, menu, files):
+        """Compare backup with original using meld or diff"""
+        if len(files) != 1:
+            return
         
-        # Create file chooser dialog (GTK 3)
-        dialog = Gtk.FileChooserDialog(
-            title="Backup As...",
-            action=Gtk.FileChooserAction.SAVE,
-            buttons=(
-                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                Gtk.STOCK_SAVE, Gtk.ResponseType.OK
+        backup_path = self._get_file_path(files[0])
+        original_name = self._get_original_name(backup_path)
+        original_path = backup_path.parent / original_name
+        
+        if not original_path.exists():
+            self._show_notification(
+                "Compare Failed",
+                f"Original file not found:\n{original_name}",
+                success=False
             )
-        )
+            return
         
-        dialog.set_current_name(backup_name)
-        dialog.set_current_folder(str(source_path.parent))
-        dialog.set_do_overwrite_confirmation(True)
-        
-        logger.info("backup_as: Showing GTK3 dialog")
-        
-        response = dialog.run()
-        
-        if response == Gtk.ResponseType.OK:
-            dest_path = Path(dialog.get_filename())
-            dialog.destroy()
-            
-            logger.info(f"backup_as: User selected {dest_path}")
-            
-            # Large file/folder - use threaded backup
-            if source_path.is_dir() or (source_path.is_file() and source_path.stat().st_size > 10_000_000):
-                self._backup_with_progress(source_path, dest_path, "Backup Complete ✓")
+        # Try meld first, fall back to diff
+        try:
+            # Check if meld is available
+            if shutil.which('meld'):
+                subprocess.Popen(['meld', str(backup_path), str(original_path)])
             else:
-                success, error = self._create_backup(source_path, dest_path)
+                # Use diff with notification
+                result = subprocess.run(
+                    ['diff', '-u', str(backup_path), str(original_path)],
+                    capture_output=True,
+                    text=True
+                )
                 
-                if success:
-                    self._cleanup_old_backups(dest_path)
+                if result.returncode == 0:
                     self._show_notification(
-                        "Backup Complete ✓",
-                        f"Backed up to:\n{dest_path}"
+                        "No Differences",
+                        "Files are identical"
                     )
                 else:
-                    self._show_notification(
-                        "Backup Failed",
-                        error,
-                        success=False
-                    )
+                    # Show diff in default text editor
+                    diff_output = result.stdout
+                    temp_file = Path('/tmp/backup_diff.txt')
+                    temp_file.write_text(diff_output)
+                    subprocess.Popen(['xdg-open', str(temp_file)])
+        except Exception as e:
+            logger.error(f"Compare failed: {e}")
+            self._show_notification(
+                "Compare Failed",
+                "Install 'meld' for visual comparison\nsudo apt install meld",
+                success=False
+            )
+    
+    def view_backups(self, menu, files):
+        """Show all backups of selected file"""
+        if len(files) != 1:
+            return
+        
+        source_path = self._get_file_path(files[0])
+        
+        # Search for backups in same folder and ~/Backups
+        search_dirs = [source_path.parent, self.backup_folder]
+        
+        if source_path.is_file():
+            pattern = f"{source_path.stem}_backup_*{source_path.suffix}"
         else:
-            logger.debug("backup_as: User cancelled dialog")
-            dialog.destroy()
+            pattern = f"{source_path.name}_backup_*.tar.gz"
+        
+        backups = []
+        for search_dir in search_dirs:
+            if search_dir.exists():
+                import glob
+                backups.extend(glob.glob(str(search_dir / pattern)))
+        
+        if not backups:
+            self._show_notification(
+                "No Backups Found",
+                f"No backups found for:\n{source_path.name}",
+                success=False
+            )
+            return
+        
+        # Sort by modification time (newest first)
+        backups.sort(key=os.path.getmtime, reverse=True)
+        
+        # Show dialog with backup list
+        self._show_backup_list(source_path.name, backups)
+    
+    def _show_backup_list(self, filename, backups):
+        """Show GTK dialog with list of backups"""
+        window = Gtk.Window()
+        window.set_title(f"Backups of {filename}")
+        window.set_default_size(600, 400)
+        window.set_modal(True)
+        
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        main_box.set_margin_start(15)
+        main_box.set_margin_end(15)
+        main_box.set_margin_top(15)
+        main_box.set_margin_bottom(15)
+        
+        # Header
+        header = Gtk.Label()
+        header.set_markup(f"<span size='large' weight='bold'>Found {len(backups)} backup(s)</span>")
+        header.set_halign(Gtk.Align.START)
+        main_box.append(header)
+        
+        # Scrolled window for list
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        
+        list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        
+        for backup_path in backups:
+            backup = Path(backup_path)
+            mtime = datetime.fromtimestamp(os.path.getmtime(backup))
+            size = backup.stat().st_size
+            
+            # Format size
+            if size < 1024:
+                size_str = f"{size} B"
+            elif size < 1024*1024:
+                size_str = f"{size/1024:.1f} KB"
+            elif size < 1024*1024*1024:
+                size_str = f"{size/(1024*1024):.1f} MB"
+            else:
+                size_str = f"{size/(1024*1024*1024):.1f} GB"
+            
+            backup_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            backup_box.set_margin_start(5)
+            backup_box.set_margin_end(5)
+            backup_box.set_margin_top(5)
+            backup_box.set_margin_bottom(5)
+            
+            info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            info_box.set_hexpand(True)
+            
+            name_label = Gtk.Label(label=backup.name)
+            name_label.set_halign(Gtk.Align.START)
+            name_label.set_ellipsize(3)  # Ellipsize end
+            info_box.append(name_label)
+            
+            details_label = Gtk.Label()
+            details_label.set_markup(f"<small>{mtime.strftime('%Y-%m-%d %H:%M:%S')} • {size_str}</small>")
+            details_label.set_halign(Gtk.Align.START)
+            info_box.append(details_label)
+            
+            backup_box.append(info_box)
+            
+            open_btn = Gtk.Button(label="Open Folder")
+            open_btn.connect("clicked", lambda b, p=backup.parent: subprocess.Popen(['nautilus', str(p)]))
+            backup_box.append(open_btn)
+            
+            list_box.append(backup_box)
+            
+            # Add separator
+            if backup != backups[-1]:
+                sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+                list_box.append(sep)
+        
+        scrolled.set_child(list_box)
+        main_box.append(scrolled)
+        
+        # Close button
+        close_btn = Gtk.Button(label="Close")
+        close_btn.connect("clicked", lambda b: window.close())
+        main_box.append(close_btn)
+        
+        window.set_child(main_box)
+        window.present()
     
     def backup_to_home(self, menu, files):
-        """Backup to ~/Backups folder"""
         success_count = 0
         
-        # Single large file/folder
+        # Single large file - use threaded backup
         if len(files) == 1:
             source_path = self._get_file_path(files[0])
             backup_name = self._generate_backup_name(source_path)
@@ -581,7 +657,7 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
                 self._backup_with_progress(source_path, dest_path, "Backup Complete ✓")
                 return
         
-        # Multiple files or small files
+        # Multiple files - synchronous
         for file_info in files:
             source_path = self._get_file_path(file_info)
             backup_name = self._generate_backup_name(source_path)
@@ -600,140 +676,78 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
                 )
         
         if success_count > 0:
-            msg = f"{success_count} file(s) backed up to:\n{self.backup_folder}"
+            if success_count == 1:
+                msg = f"Backed up to ~/Backups"
+            else:
+                msg = f"{success_count} file(s) backed up to ~/Backups"
+            
             self._show_notification("Backup Complete ✓", msg)
     
     def restore_backup(self, menu, files):
-        """Restore original file from backup"""
+        """Restore a file from backup"""
         if len(files) != 1:
             return
         
         backup_path = self._get_file_path(files[0])
-        original_name = self._get_original_filename(backup_path)
-        
-        if not original_name:
-            self._show_notification(
-                "Cannot Restore",
-                "This doesn't appear to be a backup file",
-                success=False
-            )
-            return
-        
-        # Determine original path
+        original_name = self._get_original_name(backup_path)
         original_path = backup_path.parent / original_name
         
-        # Ask for confirmation (simple yes/no)
-        msg = f"Restore '{original_name}' from backup?"
+        # Check if original exists
         if original_path.exists():
-            msg += f"\n\nThis will overwrite the existing file!"
+            # Show confirmation dialog
+            self._show_restore_confirmation(backup_path, original_path)
+        else:
+            # Just restore without confirmation
+            self._do_restore(backup_path, original_path)
+    
+    def _show_restore_confirmation(self, backup_path, original_path):
+        """Show GTK 4 confirmation dialog for restore"""
         
-        # For GTK 3/4 compatibility, we'll use notify-send for confirmation
-        # In a full implementation, you'd use proper dialogs
-        self._show_notification(
-            "Restore",
-            f"Restoring {original_name}...",
-            success=True
+        def on_response(dialog, response):
+            if response == "restore":
+                self._do_restore(backup_path, original_path)
+        
+        dialog = Gtk.AlertDialog()
+        dialog.set_message("Restore from Backup?")
+        dialog.set_detail(
+            f"This will overwrite:\n{original_path.name}\n\n"
+            f"With backup from:\n{backup_path.name}\n\n"
+            "The current file will be lost. Continue?"
         )
+        dialog.set_buttons(["Cancel", "Restore"])
+        dialog.set_cancel_button(0)
+        dialog.set_default_button(1)
         
+        dialog.choose(None, None, on_response)
+    
+    def _do_restore(self, backup_path, original_path):
+        """Perform the actual restore"""
         try:
             if backup_path.suffix == '.gz' and backup_path.stem.endswith('.tar'):
-                # Extract folder from archive
+                # Extract tar.gz
                 with tarfile.open(backup_path, "r:gz") as tar:
-                    tar.extractall(backup_path.parent)
-                success_msg = f"Restored folder: {original_name}"
+                    tar.extractall(original_path.parent)
+                self._show_notification(
+                    "Restore Complete ✓",
+                    f"Restored to:\n{original_path.parent}"
+                )
             else:
-                # Copy file back
+                # Simple file copy
                 shutil.copy2(backup_path, original_path)
-                success_msg = f"Restored: {original_name}"
-            
-            self._show_notification("Restore Complete ✓", success_msg)
+                self._show_notification(
+                    "Restore Complete ✓",
+                    f"Restored:\n{original_path.name}"
+                )
         except Exception as e:
+            logger.error(f"Restore failed: {e}")
             self._show_notification(
                 "Restore Failed",
                 str(e),
                 success=False
             )
     
-    def compare_backup(self, menu, files):
-        """Compare backup with original using meld or diff"""
-        if len(files) != 1:
-            return
-        
-        backup_path = self._get_file_path(files[0])
-        original_name = self._get_original_filename(backup_path)
-        
-        if not original_name:
-            self._show_notification(
-                "Cannot Compare",
-                "This doesn't appear to be a backup file",
-                success=False
-            )
-            return
-        
-        original_path = backup_path.parent / original_name
-        
-        if not original_path.exists():
-            self._show_notification(
-                "Cannot Compare",
-                f"Original file not found:\n{original_name}",
-                success=False
-            )
-            return
-        
-        # Try meld first, fallback to diff
-        try:
-            if shutil.which('meld'):
-                subprocess.Popen(['meld', str(backup_path), str(original_path)])
-            else:
-                subprocess.Popen(['gnome-terminal', '--', 'diff', str(backup_path), str(original_path)])
-        except Exception as e:
-            self._show_notification(
-                "Compare Failed",
-                f"Error: {e}\nInstall meld: sudo apt install meld",
-                success=False
-            )
-    
-    def view_backups(self, menu, files):
-        """View all backups of a file"""
-        if len(files) != 1:
-            return
-        
-        source_path = self._get_file_path(files[0])
-        
-        # Find all backups
-        parent_dir = source_path.parent
-        pattern = f"{source_path.stem}_backup_*{source_path.suffix}"
-        
-        backups = sorted(
-            parent_dir.glob(pattern),
-            key=lambda p: p.stat().st_mtime,
-            reverse=True
-        )
-        
-        if not backups:
-            self._show_notification(
-                "No Backups Found",
-                f"No backups found for:\n{source_path.name}",
-                success=False
-            )
-            return
-        
-        # Show notification with count
-        msg = f"Found {len(backups)} backup(s) of:\n{source_path.name}\n\nOpening folder..."
-        self._show_notification("Backups Found", msg)
-        
-        # Open folder
-        subprocess.Popen(['nautilus', str(parent_dir)])
-    
     def show_settings(self, menu, files):
-        """Show settings window - Compatible with GTK 3 and 4"""
-        if GTK_VERSION == 4:
-            self._show_settings_gtk4()
-        else:
-            self._show_settings_gtk3()
-    
-    def _show_settings_gtk4(self):
-        """GTK 4 settings window"""
+        """Show settings window - GTK 4 version with cleanup options"""
         
         window = Gtk.Window()
         window.set_title("Backup Settings")
@@ -806,140 +820,31 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         
         main_box.append(folder_box)
         
-        # Add cleanup section, stats, features, etc. (continuing from original)
-        self._add_common_settings_content(main_box, window, gtk_version=4)
-        
-        window.set_child(main_box)
-        window.present()
-    
-    def _show_settings_gtk3(self):
-        """GTK 3 settings window"""
-        
-        window = Gtk.Window()
-        window.set_title("Backup Settings")
-        window.set_default_size(500, 450)
-        window.set_modal(True)
-        
-        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=15)
-        main_box.set_margin_start(20)
-        main_box.set_margin_end(20)
-        main_box.set_margin_top(20)
-        main_box.set_margin_bottom(20)
-        
-        # Header
-        header = Gtk.Label()
-        header.set_markup("<span size='large' weight='bold'>Backup Extension Settings</span>")
-        header.set_halign(Gtk.Align.START)
-        main_box.pack_start(header, False, False, 0)
-        
-        sep1 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        main_box.pack_start(sep1, False, False, 0)
-        
-        # Backup folder section
-        folder_label = Gtk.Label()
-        folder_label.set_markup("<b>Backup Folder:</b>")
-        folder_label.set_halign(Gtk.Align.START)
-        main_box.pack_start(folder_label, False, False, 0)
-        
-        folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        
-        folder_entry = Gtk.Entry()
-        folder_entry.set_text(str(self.backup_folder))
-        folder_entry.set_editable(False)
-        folder_entry.set_hexpand(True)
-        folder_box.pack_start(folder_entry, True, True, 0)
-        
-        browse_btn = Gtk.Button(label="Browse...")
-        
-        def on_browse_clicked(button):
-            dialog = Gtk.FileChooserDialog(
-                title="Select Backup Folder",
-                parent=window,
-                action=Gtk.FileChooserAction.SELECT_FOLDER,
-                buttons=(
-                    Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                    Gtk.STOCK_OPEN, Gtk.ResponseType.OK
-                )
-            )
-            
-            dialog.set_current_folder(str(self.backup_folder))
-            response = dialog.run()
-            
-            if response == Gtk.ResponseType.OK:
-                new_path = Path(dialog.get_filename())
-                self.backup_folder = new_path
-                folder_entry.set_text(str(new_path))
-                
-                self.config_dir.mkdir(parents=True, exist_ok=True)
-                self.config_file.write_text(str(new_path))
-                
-                self._show_notification(
-                    "Settings Saved",
-                    f"Backup folder changed to:\n{new_path}"
-                )
-            
-            dialog.destroy()
-        
-        browse_btn.connect("clicked", on_browse_clicked)
-        folder_box.pack_start(browse_btn, False, False, 0)
-        
-        main_box.pack_start(folder_box, False, False, 0)
-        
-        # Add common settings content
-        self._add_common_settings_content(main_box, window, gtk_version=3)
-        
-        window.add(main_box)
-        window.show_all()
-    
-    def _add_common_settings_content(self, main_box, window, gtk_version):
-        """Add common settings UI elements (works for both GTK 3 and 4)"""
-        
-        # Helper to add widget (different methods for GTK 3/4)
-        def add_widget(widget):
-            if gtk_version == 4:
-                main_box.append(widget)
-            else:
-                main_box.pack_start(widget, False, False, 0)
-        
         sep2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        add_widget(sep2)
+        main_box.append(sep2)
         
         # Auto-cleanup section
         cleanup_label = Gtk.Label()
         cleanup_label.set_markup("<b>Auto-Cleanup Old Backups:</b>")
         cleanup_label.set_halign(Gtk.Align.START)
-        add_widget(cleanup_label)
+        main_box.append(cleanup_label)
         
         cleanup_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         
         cleanup_check = Gtk.CheckButton()
-        if gtk_version == 4:
-            cleanup_check.set_label("Keep only last")
-        else:
-            cleanup_check.set_label("Keep only last")
+        cleanup_check.set_label("Keep only last")
         cleanup_check.set_active(self.max_backups is not None)
-        
-        if gtk_version == 4:
-            cleanup_box.append(cleanup_check)
-        else:
-            cleanup_box.pack_start(cleanup_check, False, False, 0)
+        cleanup_box.append(cleanup_check)
         
         cleanup_spin = Gtk.SpinButton()
         cleanup_spin.set_range(1, 100)
         cleanup_spin.set_increments(1, 5)
         cleanup_spin.set_value(self.max_backups if self.max_backups else 10)
         cleanup_spin.set_sensitive(self.max_backups is not None)
-        
-        if gtk_version == 4:
-            cleanup_box.append(cleanup_spin)
-        else:
-            cleanup_box.pack_start(cleanup_spin, False, False, 0)
+        cleanup_box.append(cleanup_spin)
         
         backups_label = Gtk.Label(label="backups per file")
-        if gtk_version == 4:
-            cleanup_box.append(backups_label)
-        else:
-            cleanup_box.pack_start(backups_label, False, False, 0)
+        cleanup_box.append(backups_label)
         
         def on_cleanup_toggled(check):
             cleanup_spin.set_sensitive(check.get_active())
@@ -966,31 +871,25 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         cleanup_check.connect("toggled", on_cleanup_toggled)
         cleanup_spin.connect("value-changed", on_value_changed)
         
-        add_widget(cleanup_box)
+        main_box.append(cleanup_box)
         
         cleanup_hint = Gtk.Label()
         cleanup_hint.set_markup("<small>Older backups are automatically deleted when limit is reached</small>")
         cleanup_hint.set_halign(Gtk.Align.START)
-        if gtk_version == 4:
-            cleanup_hint.set_margin_start(15)
-        else:
-            cleanup_hint.set_margin_left(15)
-        add_widget(cleanup_hint)
+        cleanup_hint.set_margin_start(15)
+        main_box.append(cleanup_hint)
         
         sep3 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        add_widget(sep3)
+        main_box.append(sep3)
         
         # Statistics section
         stats_label = Gtk.Label()
         stats_label.set_markup("<b>Statistics:</b>")
         stats_label.set_halign(Gtk.Align.START)
-        add_widget(stats_label)
+        main_box.append(stats_label)
         
         stats_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        if gtk_version == 4:
-            stats_box.set_margin_start(15)
-        else:
-            stats_box.set_margin_left(15)
+        stats_box.set_margin_start(15)
         
         total_backups = self.stats.get("total_backups", 0)
         total_size = self.stats.get("total_size", 0)
@@ -1011,27 +910,21 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         for stat in stats_text:
             label = Gtk.Label(label=stat)
             label.set_halign(Gtk.Align.START)
-            if gtk_version == 4:
-                stats_box.append(label)
-            else:
-                stats_box.pack_start(label, False, False, 0)
+            stats_box.append(label)
         
-        add_widget(stats_box)
+        main_box.append(stats_box)
         
         sep4 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        add_widget(sep4)
+        main_box.append(sep4)
         
         # Features section
         features_label = Gtk.Label()
         features_label.set_markup("<b>Features:</b>")
         features_label.set_halign(Gtk.Align.START)
-        add_widget(features_label)
+        main_box.append(features_label)
         
         features_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        if gtk_version == 4:
-            features_box.set_margin_start(15)
-        else:
-            features_box.set_margin_left(15)
+        features_box.set_margin_start(15)
         
         features = [
             "⚡ Quick Backup - Timestamped backups in same folder",
@@ -1050,55 +943,39 @@ class BackupExtension(GObject.GObject, Nautilus.MenuProvider):
         for feature in features:
             label = Gtk.Label(label=feature)
             label.set_halign(Gtk.Align.START)
-            if gtk_version == 4:
-                features_box.append(label)
-            else:
-                features_box.pack_start(label, False, False, 0)
+            features_box.append(label)
         
-        add_widget(features_box)
+        main_box.append(features_box)
         
-        # Spacer
         spacer = Gtk.Box()
-        if gtk_version == 4:
-            spacer.set_vexpand(True)
-            add_widget(spacer)
-        else:
-            main_box.pack_start(spacer, True, True, 0)
+        spacer.set_vexpand(True)
+        main_box.append(spacer)
         
         sep5 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        add_widget(sep5)
+        main_box.append(sep5)
         
         # Bottom buttons
         bottom_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         
         version_label = Gtk.Label()
-        version_label.set_markup(f"<small>Nautilus Backup Extension v1.2.1 (GTK {GTK_VERSION})</small>")
+        version_label.set_markup("<small>Nautilus Backup Extension v1.2.0</small>")
         version_label.set_hexpand(True)
         version_label.set_halign(Gtk.Align.START)
-        
-        if gtk_version == 4:
-            bottom_box.append(version_label)
-        else:
-            bottom_box.pack_start(version_label, True, True, 0)
+        bottom_box.append(version_label)
         
         open_btn = Gtk.Button(label="Open Backups Folder")
         def on_open_clicked(button):
             subprocess.Popen(['nautilus', str(self.backup_folder)])
         open_btn.connect("clicked", on_open_clicked)
-        
-        if gtk_version == 4:
-            bottom_box.append(open_btn)
-        else:
-            bottom_box.pack_start(open_btn, False, False, 0)
+        bottom_box.append(open_btn)
         
         close_btn = Gtk.Button(label="Close")
         def on_close_clicked(button):
-            window.close() if gtk_version == 4 else window.destroy()
+            window.close()
         close_btn.connect("clicked", on_close_clicked)
+        bottom_box.append(close_btn)
         
-        if gtk_version == 4:
-            bottom_box.append(close_btn)
-        else:
-            bottom_box.pack_start(close_btn, False, False, 0)
+        main_box.append(bottom_box)
         
-        add_widget(bottom_box)
+        window.set_child(main_box)
+        window.present()

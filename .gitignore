@@ -27,3 +27,6 @@ tests/
 
 # Backup testing
 test_backups/
+
+# Backups
+_backup_
