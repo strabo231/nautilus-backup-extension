@@ -28,5 +28,45 @@ tests/
 # Backup testing
 test_backups/
 
-# Backups
-_backup_
+# Backup files created by the extension
+# This matches files with _backup_ followed by timestamp
+*_backup_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].*
+
+# Manual backup files (common patterns)
+*.backup
+*.bak
+*.old
+*~
+
+# Specifically ignore backup of main extension file
+nautilus-backup_backup_*.py
+nautilus-backup.py.backup
+nautilus-backup.py.bak
+nautilus-backup.py.old
+
+# Temporary files
+*.tmp
+*.temp
+
+# Editor backup files
+\#*\#
+.\#*
+
+# Vim backup files
+*.sw[a-p]
+
+# Package build artifacts
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+debian/.debhelper/
+debian/files
+debian/*.log
+debian/*.substvars
+debian/nautilus-backup-extension/
+
+# Virtual environments (if you add testing)
+venv/
+env/
+.venv/
