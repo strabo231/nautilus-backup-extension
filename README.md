@@ -1,3 +1,5 @@
+[![Test Nautilus Backup Extension](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml/badge.svg)](https://github.com/strabo231/nautilus-backup-extension/actions/workflows/test.yml)
+
 <div align="center">
 
 # 🔄 Nautilus Backup Extension
